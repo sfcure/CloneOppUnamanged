@@ -32,11 +32,6 @@ class CloneOpportunityControllerTest {
         );
         insert pbEntry;
         
-        Location__c loc = new Location__c (
-        	Name = 'United Kingdom',
-            WssID__c = 211
-        );
-        insert loc;
         
         RecordType rt = [SELECT Id FROM RecordType WHERE SObjectType = 'Account' AND DeveloperName = 'Prospects'];
         
@@ -52,7 +47,6 @@ class CloneOpportunityControllerTest {
             CloseDate = System.today(),
             StageName = '5% - Prospecting',
             AccountId = acc.Id,
-            Location__c = loc.Id,
             Amount = 250.0,
             ForecastCategoryName = 'Pipeline',
             Type = 'Renewal'
