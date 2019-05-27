@@ -1,0 +1,136 @@
+<aura:component implements="force:hasRecordId,force:lightningQuickActionWithoutHeader" controller="CloneOpportunityController">
+    <aura:attribute name="title" type="String" default="Clone Opportunity"/>
+    <aura:attribute name="saved" type="Boolean" default="false" />
+    <aura:attribute name="showSpinner" type="Boolean" default="true" />
+    <aura:attribute name="products" type="Object"/>
+    <aura:attribute name="layoutSections" type="List" />
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="clonedOppRecordId" type="Id"/>
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    <aura:attribute name="savedDraftValues" type="Object"/>
+    <aura:attribute name="isDataChanged" type="Boolean" default="false" />
+    <aura:attribute name="errors" type="Object"/>
+    <aura:attribute name="oppUpdate" type="Opportunity" />
+    <aura:attribute name="dataLoadComplete" type="Boolean" default="false"/>
+    <aura:attribute name="currencyNumberFields" type="List"/>
+    
+    <aura:handler name="inpFieldChangedEvt" event="c:InputFieldChanged"
+    	action="{!c.handleInputFieldChange}"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <aura:attribute name="sortedBy"
+                type="String" />
+	<aura:attribute name="sortedDirection"
+                type="Boolean"
+                default="true" />
+    
+    <aura:html tag="style">
+        .slds-modal__container{
+        height : auto;
+        width: 60%;
+        max-width: 60rem;
+        }
+        .modal-body{
+        height : 500px !important;
+        max-height: 500px !important;
+        }
+        
+        .customFooter{
+        display: inline !important;
+        z-index: 0; !important;
+        }
+    </aura:html>    
+    
+    <div class="slds-modal__header custom-modal-header">
+        <h4 class="title slds-text-heading--medium" >
+            <aura:if isTrue="{!!v.saved}">
+                <ui:outputText value="{!v.title}" />
+                <aura:set attribute="else">
+                    Edit All Products
+                </aura:set>
+            </aura:if>
+        </h4>
+    </div>
+    
+    <div class="custom-modal-container">
+        
+        <lightning:spinner aura:id="spinner" variant="brand" class="slds-hide"/>
+        
+        <div id="error" style="color:red" class="slds-col slds-size_1-of-2  slds-p-left_x-small"></div>
+        <aura:if isTrue="{!!v.saved}">
+            
+            <lightning:recordEditForm aura:id="OppForm"
+                                  objectApiName="Opportunity"
+                                  class="OppForm"
+                                  onsubmit="{!c.cloneOpportunity}"
+                                  onload="{!c.recordLoaded}" 
+                                  recordId="{!v.recordId}">
+                
+                <lightning:messages /> 
+                <lightning:inputField fieldName="Id" style="display:none;"/>
+                <aura:if isTrue="{!v.dataLoadComplete}">
+                    <aura:iteration items="{!v.layoutSections}" var="section" indexVar="index">
+                        <aura:if isTrue="{!and(section.totalColumns > 0, section.lstFields.length > 0)}">
+                            <div class="slds-section slds-is-open">
+                                <h3 class="{!index == 0 ? 'slds-section__title slds-hide' : 'slds-section__title'}">
+                                    {!section.label}
+                                </h3>
+                                <div class="slds-section__content">
+                                    <lightning:layout multipleRows="{!section.totalColumns > 1 }">
+                                        <aura:iteration items="{!section.lstFields}" var="field">
+                                            <lightning:layoutItem size="{! 12/section.totalColumns }" class="field-container" flexibility="auto">
+                                                <aura:if isTrue="{!(!field.isReadOnly)}">
+                                                    <aura:if isTrue="{!and(field.type != 'DOUBLE', field.type != 'CURRENCY')}">
+                                                        <lightning:inputField fieldName="{!field.fieldName}" />	
+                                                        <aura:set attribute="else">
+                                                            <aura:if isTrue="{!v.oppUpdate.CreatedById != undefined}">
+                                                            	<c:InputField label="{!field.label}" oppRecord="{!v.oppUpdate}" name="{!field.fieldName}" />	  
+                                                        	</aura:if>
+                                                        </aura:set>
+                                                    </aura:if>
+                                                </aura:if>
+                                            </lightning:layoutItem>
+                                        </aura:iteration>
+                                 </lightning:layout>
+                                </div>
+                            </div>
+                        </aura:if>
+                    </aura:iteration>
+                     
+                    <div class="slds-docked-form-footer custom-docked-footer">
+                        <div class="slds-grid slds-grid_align-center">
+                            <button type="button" class="slds-button slds-button_neutral" onclick="{!c.handleCancel}">Cancel</button>
+                            <lightning:button variant="brand" type="submit" label="Save &amp; Next"/>
+                        </div>
+                    </div>
+                </aura:if>
+            </lightning:recordEditForm>
+            <aura:set attribute="else">
+                <div class="table-container">     
+                    <lightning:datatable
+                         keyField="Id"
+                         data="{! v.products }"
+                         columns="{! v.columns }"
+                         sortedBy="{!v.sortedBy}"
+                     	 sortedDirection="{!v.sortedDirection}" 
+                         onsort="{!c.handleColumnSorting}" 
+                         oncellchange="{!c.validateFieldsAndhideCustomDockFooter}"
+                         onsave="{!c.handleCloneLineItems}"                
+                         oncancel="{!c.navigateToOpp}" 
+                         onrowaction="{!c.handleRowAction}"
+                         errors="{!v.errors}"                
+                         hideCheckboxColumn="true"/>
+                </div>
+                <aura:if isTrue="{!!(v.isDataChanged)}">
+                    <div class="slds-docked-form-footer custom-docked-footer" id="productTable">
+                        <div class="slds-grid slds-grid_align-center">
+                            <button type="button" class="slds-button slds-button_neutral" onclick="{!c.navigateToOpp}">Cancel</button>
+                            <button type="button" class="slds-button slds-button_brand save-btn" onclick="{!c.handleCloneLineItems}">Save</button>
+                        </div>
+                    </div>
+                </aura:if>
+            </aura:set>
+        </aura:if>
+        
+    </div>
+</aura:component>

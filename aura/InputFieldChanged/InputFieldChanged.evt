@@ -1,0 +1,4 @@
+<aura:event type="COMPONENT" description="Updating opportunity record">
+    <aura:attribute name="fieldName" type="String"/>
+	<aura:attribute name="value" type="Double"/>
+</aura:event>

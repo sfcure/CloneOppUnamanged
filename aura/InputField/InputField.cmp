@@ -1,0 +1,11 @@
+<aura:component>
+    <aura:registerEvent name="inpFieldChangedEvt" type="c:InputFieldChanged"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="oppRecord" type="Opportunity" />
+    <aura:attribute name="value" type="Double" />
+    <aura:attribute name="name" type="String" />
+    <aura:attribute name="label" type="String" />
+    <aura:handler name="change" value="{!v.value}" action="{!c.onChange}"/>
+    
+    <lightning:input type="number" step="0.0001" label="{!v.label}" value="{!v.value}" name="{!v.name}"/>	
+</aura:component>
